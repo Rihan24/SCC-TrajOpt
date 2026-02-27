@@ -14,6 +14,10 @@ U = load('GP_3_U0.1.mat').solution.U;
 X = load('GP_3_U0.1.mat').solution.X;
 cov = load('GP_3_U0.1.mat').solution.cov;
 
+% U = load('GP_GMM0.05_2.mat').solution.U; 
+% X = load('GP_GMM0.05_2.mat').solution.X;
+% cov = load('GP_GMM0.05_2.mat').solution.cov;
+
 % U = load('GP_gaussian_0.05.mat').solution.U; 
 % X = load('GP_gaussian_0.05.mat').solution.X;
 % cov = load('GP_gaussian_0.05.mat').solution.cov;
@@ -38,6 +42,7 @@ sigma = 0.05^2*eye(4);  %1.0e-03 * [0.8368    0.0068   -0.0550; 0.0068    0.7649
 % Storage for trajectories
 traj_true = zeros(4, N, P);
 % traj_gp = zeros(3, N, P);
+controls_true = zeros(2,N-1,P);
 
 K_array = cell(1, N);
 K_array{1} = zeros(2,4);
@@ -65,12 +70,13 @@ for p = 1:P
         x_true = unicycle_dynamics(x_true, u_k, dt, mu, sigma);
 %         x_gp = unicycle_GPdynamics(x_gp, u_k, dt, mu_hat, sigma_hat);
         traj_true(:,k,p) = x_true;
+        controls_true(:,k,p) = u_k;
 %         traj_gp(:,k,p) = x_gp;
     end
 end
 
-% save('GP3_for_U0.1.mat', 'traj_true', 'X', 'U','cov');
-
+save('GP3_for_U0.1_new.mat', 'traj_true','controls_true', 'X', 'U','cov');
+% save('GP4_for_GMM0.05_new.mat', 'traj_true','controls_true', 'X', 'U','cov');
 % Plotting
 figure;
 hold on;
