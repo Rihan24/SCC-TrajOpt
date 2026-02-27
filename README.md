@@ -1,8 +1,8 @@
-# Learning Certified Control Using Contraction Metric
-Pytorch implementation of the CoRL'20 paper "[Learning Certified Control Using Contraction Metric](https://arxiv.org/abs/2011.12569)", by Dawei Sun, Susmit Jha, and Chuchu Fan.
+# Statistical Contraction for Chance-COnstrained Trajectory Optimization of Non-Gaussian Stochastic Systems
+Codes for simulation and hardware experiments carried out in the paper, "[Statistical Contraction for Chance-COnstrained Trajectory Optimization of Non-Gaussian Stochastic Systems](https://arxiv.org/abs/2011.12569)", by Rihan Aaron D'Silva and Hiroyasu Tsukamoto.
 
 ## Requirements
-Dependencies include ```torch```, ```tqdm```, ```numpy```, and ```matplotlib```. You can install them using the following command.
+Dependencies include ```torch```, ```casadi``` ```tqdm```, ```numpy```, and ```matplotlib```. You can install them using the following command.
 ```bash
 pip install -r requirements.txt
 ```
