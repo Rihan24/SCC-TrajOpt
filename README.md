@@ -1,36 +1,16 @@
-# Statistical Contraction for Chance-COnstrained Trajectory Optimization of Non-Gaussian Stochastic Systems
-Codes for simulation and hardware experiments carried out in the paper, "[Statistical Contraction for Chance-COnstrained Trajectory Optimization of Non-Gaussian Stochastic Systems](https://arxiv.org/abs/2011.12569)", by Rihan Aaron D'Silva and Hiroyasu Tsukamoto.
+# Statistical Contraction for Chance-Constrained Trajectory Optimization of Non-Gaussian Stochastic Systems
+Codes for simulation and hardware experiments carried out in the paper, "[Statistical Contraction for Chance-Constrained Trajectory Optimization of Non-Gaussian Stochastic Systems](https://arxiv.org/abs/2011.12569)", by Rihan Aaron D'Silva and Hiroyasu Tsukamoto.
 
 ## Requirements
-Dependencies include ```torch```, ```casadi``` ```tqdm```, ```numpy```, and ```matplotlib```. You can install them using the following command.
+Dependencies include ```torch```, ```casadi```, ```tqdm```, ```numpy```, and ```matplotlib```. You can install them using the following command.
 ```bash
 pip install -r requirements.txt
 ```
 
 ## Usage
-The script ```main.py``` can be used for learning the controller. Usage of this script is as follows
+The neural contraction metrics are computed using the implementation in ' The script ```main.py``` can be used for learning the controller. Usage of this script is as follows
 ```
-usage: main.py [-h] [--task TASK] [--no_cuda] [--bs BS]
-               [--num_train NUM_TRAIN] [--num_test NUM_TEST]
-               [--lr LEARNING_RATE] [--epochs EPOCHS] [--lr_step LR_STEP]
-               [--lambda _LAMBDA] [--w_ub W_UB] [--w_lb W_LB] [--log LOG]
 
-optional arguments:
-  -h, --help            show this help message and exit
-  --task TASK           Name of the model.
-  --no_cuda             Disable cuda.
-  --bs BS               Batch size.
-  --num_train NUM_TRAIN
-                        Number of samples for training.
-  --num_test NUM_TEST   Number of samples for testing.
-  --lr LEARNING_RATE    Base learning rate.
-  --epochs EPOCHS       Number of training epochs.
-  --lr_step LR_STEP
-  --lambda _LAMBDA      Convergence rate: lambda
-  --w_ub W_UB           Upper bound of the eigenvalue of the dual metric.
-  --w_lb W_LB           Lower bound of the eigenvalue of the dual metric.
-  --log LOG             Path to a directory for storing the log.
-```
 
 For example, run the following command to learn a controller for the 8-dimensional quadrotor model.
 ```
