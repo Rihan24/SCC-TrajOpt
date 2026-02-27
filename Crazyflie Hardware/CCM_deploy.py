@@ -22,6 +22,10 @@ from scipy.spatial.transform import Rotation
 # CCM modules
 from np2pth import get_system_wrapper, get_controller_wrapper
 import importlib
+import sys
+sys.path.append('../systems')
+sys.path.append('../configs')
+sys.path.append('../models')
 
 # Only output errors from the logging framework
 logging.basicConfig(level=logging.ERROR)
@@ -63,20 +67,17 @@ variables = [
     # 'ctrltarget.pitch'    
 ]
 # Specify the IP address of the motion capture system
-ip_address = '128.174.245.64' # '128.174.245.190'  #'128.174.245.151'      #'128.174.245.190'
-# ip_address = '10.193.232.206'
+ip_address = '128.174.245.64' 
 # Specify the name of the rigid body that corresponds to your active marker
 # deck in the motion capture system. If your marker deck number is X, this name
 # should be 'marker_deck_X'.
-marker_deck_name =  'marker_deck_20' # <-- FIXME
-# marker_deck_name = 'TA_tester_deck' # <-- FIXME
+marker_deck_name =  'marker_deck_20' 
 # Specify the marker IDs that correspond to your active marker deck in the
 # motion capture system. If your marker deck number is X, these IDs should be
 # [X + 1, X + 2, X + 3, X + 4]. They are listed in clockwise order (viewed
 # top-down), starting from the front.
-# marker_deck_ids = [11, 12, 13, 14]
 marker_deck_ids =  [21, 22, 23, 24]
-# marker_deck_ids =  [1, 2, 3, 4]
+
 
 ###################################
 # CLIENT FOR CRAZYFLIE
@@ -127,20 +128,10 @@ class CrazyflieClient:
         self.cf.param.set_value('flightmode.stabModePitch', 1)
         self.cf.param.set_value('flightmode.stabModeYaw', 0)
 
-        # Reset the ae483 observer
-        # self.cf.param.set_value('ae483par.reset_observer', 1)
-
-        # Enable the controller (1 for default, 6 for ae483)
         if self.use_controller:
             self.cf.param.set_value('stabilizer.controller', 6)
         else:
             self.cf.param.set_value('stabilizer.controller', 1)  #1
-
-        # # Enable the observer (0 for disable, 1 for enable)
-        # if self.use_observer:
-        #     self.cf.param.set_value('ae483par.use_observer', 1)
-        # else:
-        #     self.cf.param.set_value('ae483par.use_observer', 0)
 
         # Start logging
         self.logconfs = []
@@ -221,13 +212,8 @@ class CrazyflieClient:
         'target_attitude':[]
         }
         throttle_prev= self.data['controller.cmd_thrust']['data'][-1]
-        print("throttle_prev :", throttle_prev)
+        # print("throttle_prev :", throttle_prev)
 
-        # roll_prev = self.data['controller.cmd_roll']['data'][-1]
-        # pitch_prev = self.data['controller.cmd_pitch']['data'][-1]
-
-        # roll_cmd=self.data['stateEstimate.roll']['data'][-1]
-        # pitch_cmd= -self.data['stateEstimate.pitch']['data'][-1]
         for i in range(num_steps):
             t_start = time.time()
 
@@ -253,63 +239,40 @@ class CrazyflieClient:
                 #     self.data['motor.m4']['data'][-1],
                 # ]
                 # vbat = self.data['pm.vbat']['data'][-1]
-                
-                # check if transformation is required. If using,  undo sign changes to vel_z above 
-                # vel_world = Rotation.from_euler('ZYX', [yaw, pitch, roll]).as_matrix() @ vel_body
-                # vel_world[2]=-vel_world[2]
 
                 # f_curr = sum(self.pwm_to_thrust(pwm, vbat) for pwm in pwm_vals)  / (m * g) 
                 f_curr = self.data['acc.z']['data'][-1]
-                xcurr = np.concatenate([pos, vel_body, [f_curr*g], [roll], [pitch]])
-                # print('xcurr :',xcurr)
-                # print('xstar :',xstar[:,i])
-                # print('ustar :',ustar[:,i])
 
-                # Controller with P tuning of NN controller
-                # u = (np.diag([1.5, 0.2, 0.2]) @ (np.ravel(np.array(controller(xcurr,xcurr-xstar[:,i], ustar[:,i])))-np.array(ustar[:,i])))  + np.array(ustar[:,i]) # u = [f_dot, roll_rate, pitch_rate]
+                #Obtain current state for CCM controller
+                xcurr = np.concatenate([pos, vel_body, [f_curr*g], [roll], [pitch]])
+            
+
                 u= np.ravel(np.array(controller(xcurr,xcurr-xstar[:,i], ustar[:,i])))
 
 
+                roll_cmd= roll* (180/3.14)+u[1]*dt*(180/3.14)   
+                pitch_cmd = pitch*(180/3.14) + u[2]*dt *(180/3.14)     
 
-                # Convert from rad/s to deg/s
-                # T = np.array([
-                # [1, 0, -np.sin(pitch)],
-                # [0, np.cos(roll), np.sin(roll)*np.cos(pitch)],
-                # [0, -np.sin(roll), np.cos(roll)*np.cos(pitch)]
-                # ])
-                # rate_cmd =  u[1:3] #np.degrees(T@[u[1],u[2],0]) #u[1:3] #np.degrees(u[1:3])
-                roll_cmd= roll* (180/3.14)+u[1]*dt*(180/3.14)   #Angle roll* (180/3.14)+u[1]*dt*(180/3.14) # Rateu[1]*(180/3.14)   
-                pitch_cmd = pitch*(180/3.14) + u[2]*dt *(180/3.14)    #Angle pitch*(180/3.14) + u[2]*dt *(180/3.14) #Rate u[2]*(180/3.14)  
-
-                # roll_prev=roll_cmd
-                # pitch_prev=pitch_cmd
-                # print("angle_cmd :", [roll_cmd,pitch_cmd])
 
                 f_cmd = f_curr  + (u[0]/g)*dt   #f_curr + (u[0]/g)*T_loop #due to negative z direction of model used
 
+                # Proportional controller for throttle to RPM mapping
                 throttle =  np.clip(np.round(throttle_prev+ 400*u[0]*dt), 10001, 60000).astype(int)  #(throttle_prev+ 400*u[0]*dt).astype(int)
                 throttle_prev=throttle
-                # print("throttle :",throttle)
-                # print('-------------------')
-                # pwm_thrust = self.f_to_pwm(f_cmd*m*1000, vbat)
 
 
                 self.track_log['xcurr'].append(xcurr.copy())
                 self.track_log['u'].append(u.copy())
                 self.track_log['f_cmd'].append(f_cmd)
                 self.track_log['timestamp'].append(i)
-                att = np.array([self.data['controller.roll']['data'][-1],self.data['controller.pitch']['data'][-1] ])  #,self.data['ctrltarget.roll']['data'][-1],self.data['ctrltarget.pitch']['data'][-1]])
-                # att = np.array([self.data['ctrltarget.roll']['data'][-1],self.data['ctrltarget.pitch']['data'][-1] ])
+                att = np.array([self.data['controller.roll']['data'][-1],self.data['controller.pitch']['data'][-1] ])  
                 self.track_log['target_attitude'].append(att.copy())
 
 
-                # Send to Crazyflie
+                # Send to Crazyflie. No Yaw control here.
                 self.cf.commander.send_setpoint(roll_cmd,pitch_cmd, 0.0, throttle)  #due to negative z direction of model used
-                # self.cf.commander.send_setpoint(0.0,0.0, 0.0, throttle)
 
-                # quat=Rotation.from_euler(seq='xyz', angles=(roll, pitch, yaw), degrees=False).as_quat()
-                # self.cf.commander.send_full_state_setpoint(xstar[0:3,i], xstar[3:6,i],[0,0,f_cmd*m*g] ,quat,ustar[1,i]*(180/3.14),ustar[2,i]*(180/3.14), 0)
-  
+ 
 
 
             except Exception as e:
@@ -471,38 +434,12 @@ class QualisysClient(Thread):
 
         # Transform to world frame of drone
         pos_cf, quat_cf = self.mocap_transform.update_and_transform([x, y, z],[yaw, pitch, roll])
-        # print("transformed :",pos_cf,quat_cf)
-        # print("---------------------------")
-        # if np.linalg.norm(quat_cf) > 1e-6 and np.isfinite(pos_cf[0]):
-        #     # print("APPENDED")
-        #     rpy_cf = Rotation.from_quat(quat_cf).as_euler('ZYX')
-        #     self.data_transformed['time'].append(t)
-        #     self.data_transformed['x'].append(pos_cf[0])
-        #     self.data_transformed['y'].append(pos_cf[1])
-        #     self.data_transformed['z'].append(pos_cf[2])
-        #     self.data_transformed['yaw'].append(rpy_cf[0])
-        #     self.data_transformed['pitch'].append(rpy_cf[1])
-        #     self.data_transformed['roll'].append(rpy_cf[2])
-        # else:
-        #     print("⚠️ Skipped invalid quaternion (zero norm)")
-        #     return
-
-
 
         # Check if the measurements are valid
         if np.isfinite(x):
-            # print('brrrrrrrrrrrrrrrrrrrrrr')
             self.pose_streaming=True
-            # Convert orientation to quaternion
             qx, qy, qz, qw = Rot.as_quat()
-            # Check if the queue of measurements is empty. We do this because
-            # we do not want to create a backlog of measurements. I bet there
-            # is a better way of handling this - to *replace* the measurement
-            # in the queue with the current one. Revisit this another time!
             if self.pose_queue.empty():
-                # Put rawpose in queue to send to the drone
-                # self.pose_queue.put((x, y, z, qx, qy, qz, qw))
-
                 #send transformed pose
                 self.pose_queue.put((pos_cf[0], pos_cf[1], pos_cf[2], quat_cf[0], quat_cf[1], quat_cf[2], quat_cf[3]))
         else:
@@ -531,12 +468,8 @@ def send_poses(client, queue):
 if __name__ == '__main__':
     g=9.81
     system = importlib.import_module('system_QUADROTOR_9D')
-    # f, B, _, num_dim_x, num_dim_control = get_system_wrapper(system)
-    controller = get_controller_wrapper('log_QUADROTORM_R100_0.5_25_0.8/controller_best.pth.tar') 
-    # x = np.array([0,0,0.5,0,0,0,g,0,0])
-    # xstar= np.array([0,0,1.0,0,0,0,g,0,0])
-    # ustar= np.array([g,0,0])
-    # print(np.ravel(np.array(controller(x,x-xstar,ustar))))
+    controller = get_controller_wrapper('../log_QUADROTORM_R100_0.5_25_0.8/controller_best.pth.tar') 
+
     data =   np.load('quadN_high_speed2_T3.npz')     #np.load('quadN_MOF_T7hlf.npz')
     dt=1/100
     Xstar = data['X']
@@ -570,22 +503,16 @@ if __name__ == '__main__':
 
 
 
-    # Pause before takeoff
-    # drone_client.stop(1.0)
-    # x0=mocap_client.data['x'][-1]
-    # y0=mocap_client.data['y'][-1]
-    # z0=mocap_client.data['z'][-1]
 
     drone_client.stop(3.0)
-    # x0=-3.257
-    # y0=0.0427
+
     if use_mocap:
         while not mocap_client.pose_streaming:
             print('WAITING FOR MOCAP STREAM ')
             time.sleep(0.5)
     try:
         # Takeoff
-        # drone_client.move(0.0, 0.0, 0.1, 0.0, 3.0)
+
         drone_client.move(0.0, 0.0, 0.5, 0.0, 3.0)
 
         ###################### START TRACKING #######################
