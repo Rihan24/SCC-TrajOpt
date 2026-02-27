@@ -8,22 +8,14 @@ pip install -r requirements.txt
 ```
 
 ## Usage
-The neural contraction metrics are computed using the implementation in ' The script ```main.py``` can be used for learning the controller. Usage of this script is as follows
+We employ Neural contraction metrics and tracking controller from the implementation in "[Learning Certified Control Using Contraction Metric](https://github.com/sundw2014/C3M)". To confirm working, run the pretrained controller using the command,
+
+```
+python plot.py --pretrained log_QUADROTORM_R100_0.5_25_0.8/controller_best.pth.tar --task QUADROTOR_9D --plot_type 3D --plot_dims 0 1 2
 ```
 
 
-For example, run the following command to learn a controller for the 8-dimensional quadrotor model.
-```
-mkdir log_QUADROTOR_8D
-python main.py --log log_QUADROTOR_8D --task QUADROTOR_8D
-```
-
-Run the following command to evaluate the learned controller and plot the results.
-```
-python plot.py --pretrained log_QUADROTOR_8D/controller_best.pth.tar --task QUADROTOR_8D --plot_type 3D --plot_dims 0 1 2
-python plot.py --pretrained log_QUADROTOR_8D/controller_best.pth.tar --task QUADROTOR_8D --plot_type error
-```
-
+<!--
 If you find this project useful, please cite:
 ```bibtex
 @article{sun2020learning,
@@ -33,3 +25,4 @@ If you find this project useful, please cite:
   year = {2020}
 }
 ```
+-->
