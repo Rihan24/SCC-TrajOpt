@@ -1,5 +1,5 @@
 # Statistical Contraction for Chance-Constrained Trajectory Optimization of Non-Gaussian Stochastic Systems
-Codes for simulation and hardware experiments carried out in the paper, "[Statistical Contraction for Chance-Constrained Trajectory Optimization of Non-Gaussian Stochastic Systems](https://arxiv.org/abs/2011.12569)", by Rihan Aaron D'Silva and Hiroyasu Tsukamoto.
+Codes for simulation and hardware experiments carried out in the paper, "[Statistical Contraction for Chance-Constrained Trajectory Optimization of Non-Gaussian Stochastic Systems](https://arxiv.org/abs/2603.07092)", by Rihan Aaron D'Silva and Hiroyasu Tsukamoto.
 
 ## Requirements
 Dependencies include ```torch```, ```casadi```, ```tqdm```, ```numpy```, and ```matplotlib```. You can install them using the following command.
